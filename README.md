@@ -1117,8 +1117,8 @@ ORDER BY ultima_atencion ASC;
 
 | Usuario | Contraseña | Rol | Email |
 |---------|------------|-----|-------|
-| admin | admin123 | Superusuario | farmacia@farmacia.com |
-| admin2 | admin123 | Superusuario | test@test.com |
+| admin | hola1234@ | Superusuario | farmacia@farmacia.com |
+
 
 ### Crear Nuevos Usuarios
 
