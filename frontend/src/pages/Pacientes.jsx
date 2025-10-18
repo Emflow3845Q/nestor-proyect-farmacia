@@ -62,7 +62,7 @@ const Pacientes = () => {
     <div className="flex h-screen bg-gray-100">
       <Sidebar activePage="pacientes" />
       
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-4 overflow-auto">
         <Header title="Pacientes" />
 
         {errores.general && (
@@ -72,19 +72,19 @@ const Pacientes = () => {
         )}
 
         {/* Barra de acciones */}
-        <div className="flex justify-between items-center flex-wrap gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <input
             type="text"
             placeholder="Buscar paciente..."
             value={searchTerm}
             onChange={handleSearch}
-            className="flex-1 min-w-[250px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5cc3b6] bg-gray-50"
+            className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5cc3b6] bg-gray-50"
           />
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 bg-[#5cc3b6] hover:bg-[#48a399] text-white font-semibold px-4 py-2 rounded-md transition"
+              className="flex items-center justify-center gap-2 bg-[#5cc3b6] hover:bg-[#48a399] text-white font-semibold px-4 py-2 rounded-md transition flex-1 sm:flex-none"
             >
               <FaPlus /> Añadir Paciente
             </button>
@@ -96,10 +96,10 @@ const Pacientes = () => {
           <table className="min-w-full text-left border border-gray-200">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-2 font-semibold text-gray-700">Nombre</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Identificación</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Fecha de ingreso</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Última atención</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Nombre</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Identificación</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Fecha de ingreso</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Última atención</th>
               </tr>
             </thead>
             <tbody>
@@ -121,12 +121,12 @@ const Pacientes = () => {
               ) : (
                 patientsArray.map((patient) => (
                   <tr key={patient.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium">{patient.nombre_completo}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2 font-medium">{patient.nombre_completo}</td>
+                    <td className="px-3 py-2">
                       <div className="font-medium">{patient.tipo_identificacion_display} {patient.numero_identificacion}</div>
                     </td>
-                    <td className="px-4 py-2">{formatDate(patient.fecha_ingreso)}</td>
-                    <td className={`px-4 py-2 ${
+                    <td className="px-3 py-2">{formatDate(patient.fecha_ingreso)}</td>
+                    <td className={`px-3 py-2 ${
                       !patient.ultima_atencion ? "text-red-500 font-medium" : ""
                     }`}>
                       {formatDate(patient.ultima_atencion)}

@@ -197,7 +197,8 @@ const Reportes = () => {
     plugins: { 
       legend: { display: false } 
     }, 
-    responsive: true 
+    responsive: true,
+    maintainAspectRatio: false,
   };
 
   const donutOptions = {
@@ -206,13 +207,14 @@ const Reportes = () => {
     },
     cutout: "70%",
     responsive: true,
+    maintainAspectRatio: false,
   };
 
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100">
         <Sidebar activePage="reportes" />
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="flex-1 p-4 lg:p-8 overflow-auto">
           <Header title="Reportes" subtitle="Cargando datos..." />
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5cc3b6]"></div>
@@ -228,7 +230,7 @@ const Reportes = () => {
       <Sidebar activePage="reportes" />
 
       {/* Main content */}
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-4 lg:p-8 overflow-auto">
         {/* Header */}
         <Header 
           title="Reportes" 
@@ -241,67 +243,92 @@ const Reportes = () => {
           </div>
         )}
 
-        {/* Cards */}
-        <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-10">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">
+        {/* Cards Grid */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-10">
+          {/* Card 1: Medicamentos Entregados */}
+          <div className="bg-white rounded-lg shadow p-4 lg:p-6">
+            <h3 className="text-gray-600 text-sm font-semibold mb-2 text-center lg:text-left">
               Medicamentos Entregados en el mes
             </h3>
-            <div className="text-[#2c776d] text-2xl font-bold mb-3">
+            <div className="text-[#2c776d] text-xl lg:text-2xl font-bold mb-3 text-center">
               {reportesData.medicamentosEntregados[reportesData.medicamentosEntregados.length - 1] || 0}
             </div>
-            <Bar data={barData} options={barOptions} />
+            <div className="h-48 lg:h-40 xl:h-48">
+              <Bar data={barData} options={barOptions} />
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">Alertas resueltas</h3>
-            <div className="text-[#2c776d] text-2xl font-bold mb-3">
+          {/* Card 2: Alertas Resueltas */}
+          <div className="bg-white rounded-lg shadow p-4 lg:p-6">
+            <h3 className="text-gray-600 text-sm font-semibold mb-2 text-center lg:text-left">
+              Alertas resueltas
+            </h3>
+            <div className="text-[#2c776d] text-xl lg:text-2xl font-bold mb-3 text-center">
               {reportesData.alertasResueltas.total > 0 
                 ? Math.round((reportesData.alertasResueltas.resueltas / reportesData.alertasResueltas.total) * 100) 
                 : 0
               }%
             </div>
-            <Doughnut data={donutData1} options={donutOptions} />
+            <div className="h-48 lg:h-40 xl:h-48 flex justify-center">
+              <div className="w-full max-w-48">
+                <Doughnut data={donutData1} options={donutOptions} />
+              </div>
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">Pedidos completados</h3>
-            <div className="text-[#2c776d] text-2xl font-bold mb-3">
+          {/* Card 3: Pedidos Completados */}
+          <div className="bg-white rounded-lg shadow p-4 lg:p-6">
+            <h3 className="text-gray-600 text-sm font-semibold mb-2 text-center lg:text-left">
+              Pedidos completados
+            </h3>
+            <div className="text-[#2c776d] text-xl lg:text-2xl font-bold mb-3 text-center">
               {reportesData.pedidosCompletados.completados}
             </div>
-            <Doughnut data={donutData2} options={donutOptions} />
+            <div className="h-48 lg:h-40 xl:h-48 flex justify-center">
+              <div className="w-full max-w-48">
+                <Doughnut data={donutData2} options={donutOptions} />
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Tabla */}
-        <section className="bg-white rounded-lg shadow p-6">
+        {/* Tabla de Órdenes */}
+        <section className="bg-white rounded-lg shadow p-4 lg:p-6">
           <h3 className="text-lg font-semibold mb-4 text-gray-800">
             Órdenes del mes de {obtenerMesActual()} de {new Date().getFullYear()}
           </h3>
+          
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left border border-gray-200">
+            <table className="w-full border-collapse text-left border border-gray-200 min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="py-3 px-4 font-semibold text-gray-700">Orden</th>
-                  <th className="py-3 px-4 font-semibold text-gray-700">Paciente</th>
-                  <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
-                  <th className="py-3 px-4 font-semibold text-gray-700">Fecha</th>
-                  <th className="py-3 px-4 font-semibold text-gray-700">Descripción</th>
+                  <th className="py-3 px-2 lg:px-4 font-semibold text-gray-700 text-sm">Orden</th>
+                  <th className="py-3 px-2 lg:px-4 font-semibold text-gray-700 text-sm">Paciente</th>
+                  <th className="py-3 px-2 lg:px-4 font-semibold text-gray-700 text-sm">Estado</th>
+                  <th className="py-3 px-2 lg:px-4 font-semibold text-gray-700 text-sm hidden sm:table-cell">Fecha</th>
+                  <th className="py-3 px-2 lg:px-4 font-semibold text-gray-700 text-sm hidden md:table-cell">Descripción</th>
                 </tr>
               </thead>
               <tbody>
                 {reportesData.ordenesDelMes.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-center text-gray-500">
+                    <td colSpan="5" className="py-4 px-2 lg:px-4 text-center text-gray-500">
                       No hay órdenes para el mes actual
                     </td>
                   </tr>
                 ) : (
                   reportesData.ordenesDelMes.map((orden) => (
                     <tr key={orden.id} className="border-b hover:bg-gray-50 text-gray-700">
-                      <td className="py-3 px-4 font-mono">{orden.identificacion}</td>
-                      <td className="py-3 px-4">{orden.paciente_nombre}</td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-2 lg:px-4 font-mono text-sm">
+                        {orden.identificacion}
+                      </td>
+                      <td className="py-3 px-2 lg:px-4 text-sm">
+                        <div className="font-medium">{orden.paciente_nombre}</div>
+                        <div className="text-xs text-gray-500 sm:hidden">
+                          {formatearFecha(orden.fecha)}
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 lg:px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           orden.estado === 'entregado' 
                             ? 'text-green-600 bg-green-100' 
@@ -310,8 +337,14 @@ const Reportes = () => {
                           {orden.estado_display}
                         </span>
                       </td>
-                      <td className="py-3 px-4">{formatearFecha(orden.fecha)}</td>
-                      <td className="py-3 px-4">{orden.descripcion || 'Sin descripción'}</td>
+                      <td className="py-3 px-2 lg:px-4 text-sm hidden sm:table-cell">
+                        {formatearFecha(orden.fecha)}
+                      </td>
+                      <td className="py-3 px-2 lg:px-4 text-sm hidden md:table-cell">
+                        <div className="truncate max-w-[200px]">
+                          {orden.descripcion || 'Sin descripción'}
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -319,13 +352,13 @@ const Reportes = () => {
             </table>
           </div>
 
-          {/* Botones */}
-          <div className="flex gap-3 mt-5">
-            <button className="bg-[#a2d6ce] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#7cb7ad] transition">
-              Exportar
+          {/* Botones de Acción */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-5">
+            <button className="bg-[#a2d6ce] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#7cb7ad] transition flex-1 sm:flex-none">
+              Exportar Reporte
             </button>
-            <button className="bg-[#5cc3b6] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#48a399] transition">
-              Generar reporte
+            <button className="bg-[#5cc3b6] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#48a399] transition flex-1 sm:flex-none">
+              Generar Nuevo Reporte
             </button>
           </div>
         </section>

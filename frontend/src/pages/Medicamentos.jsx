@@ -89,7 +89,7 @@ const Medicamentos = () => {
   const obtenerClaseStock = (estadoStock) => {
     switch (estadoStock) {
       case 'bajo':
-        return "text-orange-600 bg-orange-100 px-2 py-1 rounded-full text-xs font-medium";
+        return "text-blue-600 bg-blue-100 px-2 py-1 rounded-full text-xs font-medium";
       case 'agotado':
         return "text-red-600 bg-red-100 px-2 py-1 rounded-full text-xs font-medium";
       default:
@@ -112,7 +112,7 @@ const Medicamentos = () => {
     <div className="flex h-screen bg-gray-100">
       <Sidebar activePage="medicamentos" />
 
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-4 overflow-auto">
         <Header title="Medicamentos" />
 
         {errores.general && (
@@ -122,31 +122,31 @@ const Medicamentos = () => {
         )}
 
         {/* Barra de acciones */}
-        <div className="flex justify-between items-center flex-wrap gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <input
             type="text"
             placeholder="Buscar por nombre, laboratorio, categoría..."
             value={terminoBusqueda}
             onChange={manejarBusqueda}
-            className="flex-1 min-w-[250px] px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5cc3b6] bg-gray-50"
+            className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#5cc3b6] bg-gray-50"
           />
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={descargarPlantilla}
-              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold px-4 py-2 rounded-md transition"
+              className="flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold px-3 py-2 rounded-md transition flex-1 sm:flex-none"
             >
               <FaDownload /> Plantilla
             </button>
             <button
               onClick={() => setMostrarUploadForm(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition"
+              className="flex items-center justify-center gap-2 bg-[#5cc3b6] hover:bg-[#48a399] text-white font-semibold px-3 py-2 rounded-md transition flex-1 sm:flex-none"
             >
               <FaUpload /> Cargar Excel
             </button>
             <button
               onClick={() => setMostrarFormulario(true)}
-              className="flex items-center gap-2 bg-[#5cc3b6] hover:bg-[#48a399] text-white font-semibold px-4 py-2 rounded-md transition"
+              className="flex items-center justify-center gap-2 bg-[#5cc3b6] hover:bg-[#48a399] text-white font-semibold px-3 py-2 rounded-md transition flex-1 sm:flex-none"
             >
               <FaPlus /> Añadir Medicamento
             </button>
@@ -158,15 +158,15 @@ const Medicamentos = () => {
           <table className="min-w-full text-left border border-gray-200">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-2 font-semibold text-gray-700">ID</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Medicamento</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Presentación</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Categoría</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Stock</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Precio</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Vencimiento</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Ubicación</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Uso Frecuente</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">ID</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Medicamento</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Presentación</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Categoría</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Stock</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Precio</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Vencimiento</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Ubicación</th>
+                <th className="px-3 py-2 font-semibold text-gray-700">Uso Frecuente</th>
               </tr>
             </thead>
             <tbody>
@@ -188,16 +188,16 @@ const Medicamentos = () => {
               ) : (
                 medicamentos.map((medicamento) => (
                   <tr key={medicamento.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2 font-mono text-sm">
+                    <td className="px-3 py-2 font-mono text-sm">
                       {medicamento.id_medicamento}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">
                       <div className="font-medium">{medicamento.nombre_producto}</div>
                       <div className="text-sm text-gray-500">{medicamento.laboratorio}</div>
                     </td>
-                    <td className="px-4 py-2">{medicamento.presentacion}</td>
-                    <td className="px-4 py-2">{medicamento.categoria_display}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">{medicamento.presentacion}</td>
+                    <td className="px-3 py-2">{medicamento.categoria_display}</td>
+                    <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{medicamento.stock_actual}</span>
                         <span className={obtenerClaseStock(medicamento.estado_stock)}>
@@ -205,14 +205,14 @@ const Medicamentos = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-2 font-medium">
+                    <td className="px-3 py-2 font-medium">
                       {formatearPrecio(medicamento.precio_unitario)}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">
                       {formatearFecha(medicamento.fecha_vencimiento)}
                     </td>
-                    <td className="px-4 py-2">{medicamento.ubicacion}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">{medicamento.ubicacion}</td>
+                    <td className="px-3 py-2">
                       <label className="flex items-center gap-2 text-gray-700">
                         <input
                           type="checkbox"
@@ -220,7 +220,7 @@ const Medicamentos = () => {
                           onChange={(e) => manejarUsoFrecuente(medicamento.id, e.target.checked)}
                           className="rounded focus:ring-[#5cc3b6]"
                         />
-                        <span className={`text-sm ${medicamento.uso_frecuente ? 'text-green-600 font-medium' : 'text-gray-500'}`}>
+                        <span className={`text-sm ${medicamento.uso_frecuente ? 'text-[#5cc3b6] font-medium' : 'text-gray-500'}`}>
                           Frecuente
                         </span>
                       </label>

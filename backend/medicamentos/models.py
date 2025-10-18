@@ -52,3 +52,6 @@ class Medicamento(models.Model):
             return 'bajo'
         else:
             return 'normal'
+
+    def get_categoria_display(self):
+        return dict(self.CATEGORIAS).get(self.categoria, self.categoria)

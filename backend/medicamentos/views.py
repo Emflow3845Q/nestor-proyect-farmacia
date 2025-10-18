@@ -36,10 +36,8 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Leer el archivo Excel
             df = pd.read_excel(archivo)
             
-            # Validar columnas requeridas
             columnas_requeridas = [
                 'ID', 'Nombre del producto', 'Presentación', 'Categoría', 
                 'Laboratorio', 'Lote', 'Fecha de vencimiento', 'Stock actual',
@@ -54,9 +52,9 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
                     )
 
             medicamentos_creados = 0
+            medicamentos_actualizados = 0
             errores = []
 
-            # Mapeo de categorías del Excel al modelo
             mapeo_categorias = {
                 'Analgésico': 'analgesico',
                 'Antibiótico': 'antibiotico',
@@ -74,42 +72,66 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
 
             for index, fila in df.iterrows():
                 try:
-                    # Convertir categoría del Excel al formato del modelo
+                    id_medicamento = str(fila['ID']).strip()
+                    if not id_medicamento:
+                        errores.append(f"Fila {index + 2}: El ID no puede estar vacío")
+                        continue
+
                     categoria_excel = str(fila['Categoría']).strip()
                     categoria_modelo = mapeo_categorias.get(categoria_excel, 'otros')
                     
-                    # Manejar fechas que puedan venir como NaN
                     fecha_ingreso = fila.get('Fecha de ingreso')
                     if pd.isna(fecha_ingreso):
                         fecha_ingreso = None
 
+                    fecha_vencimiento = fila['Fecha de vencimiento']
+                    if pd.isna(fecha_vencimiento):
+                        errores.append(f"Fila {index + 2}: La fecha de vencimiento no puede estar vacía")
+                        continue
+
+                    datos_medicamento = {
+                        'nombre_producto': str(fila['Nombre del producto']),
+                        'presentacion': str(fila['Presentación']),
+                        'categoria': categoria_modelo,
+                        'laboratorio': str(fila['Laboratorio']),
+                        'lote': str(fila['Lote']),
+                        'fecha_vencimiento': fecha_vencimiento,
+                        'stock_actual': int(fila['Stock actual']),
+                        'stock_minimo': int(fila['Stock mínimo']),
+                        'precio_unitario': float(fila['Precio unitario']),
+                        'ubicacion': str(fila['Ubicación']),
+                        'proveedor': str(fila['Proveedor']),
+                        'fecha_ingreso': fecha_ingreso,
+                        'observaciones': str(fila.get('Observaciones', '')),
+                    }
+
                     # Crear o actualizar medicamento
                     medicamento, creado = Medicamento.objects.update_or_create(
-                        id_medicamento=str(fila['ID']),
-                        defaults={
-                            'nombre_producto': str(fila['Nombre del producto']),
-                            'presentacion': str(fila['Presentación']),
-                            'categoria': categoria_modelo,
-                            'laboratorio': str(fila['Laboratorio']),
-                            'lote': str(fila['Lote']),
-                            'fecha_vencimiento': fila['Fecha de vencimiento'],
-                            'stock_actual': int(fila['Stock actual']),
-                            'stock_minimo': int(fila['Stock mínimo']),
-                            'precio_unitario': float(fila['Precio unitario']),
-                            'ubicacion': str(fila['Ubicación']),
-                            'proveedor': str(fila['Proveedor']),
-                            'fecha_ingreso': fecha_ingreso,
-                            'observaciones': str(fila.get('Observaciones', '')),
-                        }
+                        id_medicamento=id_medicamento,
+                        defaults=datos_medicamento
                     )
+                    
                     if creado:
                         medicamentos_creados += 1
+                    else:
+                        medicamentos_actualizados += 1
                         
                 except Exception as e:
                     errores.append(f"Fila {index + 2}: {str(e)}")
 
+            mensaje = []
+            if medicamentos_creados > 0:
+                mensaje.append(f'Se crearon {medicamentos_creados} medicamentos')
+            if medicamentos_actualizados > 0:
+                mensaje.append(f'Se actualizaron {medicamentos_actualizados} medicamentos')
+            
             return Response({
-                'mensaje': f'Se crearon {medicamentos_creados} medicamentos',
+                'mensaje': '; '.join(mensaje) if mensaje else 'No se realizaron cambios',
+                'detalle': {
+                    'creados': medicamentos_creados,
+                    'actualizados': medicamentos_actualizados,
+                    'total_procesados': medicamentos_creados + medicamentos_actualizados
+                },
                 'errores': errores,
                 'total_filas': len(df)
             })
@@ -126,7 +148,7 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
         try:
             # Crear DataFrame con el formato exacto que necesitan
             datos_ejemplo = {
-                'ID': ['1', '2', '3'],
+                'ID': ['MED001', 'MED002', 'MED003'],
                 'Nombre del producto': [
                     'Paracetamol 500 mg', 
                     'Amoxicilina 500 mg', 
@@ -164,17 +186,14 @@ class MedicamentoViewSet(viewsets.ModelViewSet):
             
             df = pd.DataFrame(datos_ejemplo)
             
-            # Crear respuesta HTTP con el Excel
             response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             response['Content-Disposition'] = 'attachment; filename=plantilla_medicamentos.xlsx'
             
             with pd.ExcelWriter(response, engine='openpyxl') as writer:
                 df.to_excel(writer, sheet_name='Medicamentos', index=False)
                 
-                # Obtener la hoja de trabajo para formatear
                 worksheet = writer.sheets['Medicamentos']
                 
-                # Ajustar el ancho de las columnas
                 for column in df:
                     column_width = max(df[column].astype(str).map(len).max(), len(column))
                     col_idx = df.columns.get_loc(column)

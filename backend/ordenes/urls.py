@@ -10,4 +10,5 @@ urlpatterns = [
         'patch': 'partial_update', 
         'delete': 'destroy'
     }), name='orden-detail'),
+    path('<int:pk>/cambiar_estado/', views.OrdenViewSet.as_view({'patch': 'cambiar_estado'}), name='orden-cambiar-estado'),
 ]

@@ -40,3 +40,8 @@ class MedicamentoSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError("El stock mínimo no puede ser negativo")
         return value
+
+    def validate_id_medicamento(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("El ID del medicamento no puede estar vacío")
+        return value

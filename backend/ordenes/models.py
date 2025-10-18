@@ -24,3 +24,7 @@ class Orden(models.Model):
 
     def __str__(self):
         return f"Orden {self.identificacion} - {self.paciente.nombre_completo}"
+
+    def get_estado_display(self):
+        """Método para obtener la representación legible del estado"""
+        return dict(self.ESTADOS).get(self.estado, self.estado)
