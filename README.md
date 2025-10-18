@@ -4133,3 +4133,1004 @@ Usuario ingresa:
 - Número: 1234567890
 - Fecha ingreso: 2025-10-17
 ```
+
+**2. Frontend envía petición**
+
+```javascript
+// frontend/src/components/forms/AddPatientForm.jsx
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  const data = {
+    nombre_completo: "Juan Pérez",
+    tipo_identificacion: "CC",
+    numero_identificacion: "1234567890",
+    fecha_ingreso: "2025-10-17",
+    ultima_atencion: null,
+    observaciones: ""
+  };
+  
+  // Petición POST con Axios
+  const response = await api.post('/api/pacientes/', data);
+  console.log(response); // Paciente creado
+};
+```
+
+**3. Backend recibe petición**
+
+```
+POST http://localhost:8000/api/pacientes/
+Content-Type: application/json
+
+{
+  "nombre_completo": "Juan Pérez",
+  "tipo_identificacion": "CC",
+  "numero_identificacion": "1234567890",
+  "fecha_ingreso": "2025-10-17",
+  "ultima_atencion": null,
+  "observaciones": ""
+}
+```
+
+**4. Django procesa en PacienteViewSet**
+
+```python
+# backend/pacientes/views.py
+class PacienteViewSet(viewsets.ModelViewSet):
+    def create(self, request):
+        # 1. Recibe datos del request
+        serializer = PacienteSerializer(data=request.data)
+        
+        # 2. Valida datos
+        if serializer.is_valid():
+            # 3. Guarda en base de datos
+            serializer.save()
+            # 4. Retorna respuesta
+            return Response(serializer.data, status=201)
+        else:
+            return Response(serializer.errors, status=400)
+```
+
+**5. Base de datos ejecuta INSERT**
+
+```sql
+INSERT INTO pacientes (
+  nombre_completo,
+  tipo_identificacion,
+  numero_identificacion,
+  fecha_ingreso,
+  ultima_atencion,
+  observaciones,
+  creado_en,
+  actualizado_en
+) VALUES (
+  'Juan Pérez',
+  'CC',
+  '1234567890',
+  '2025-10-17',
+  NULL,
+  '',
+  NOW(),
+  NOW()
+);
+```
+
+**6. Backend retorna respuesta**
+
+```json
+{
+  "id": 5,
+  "nombre_completo": "Juan Pérez",
+  "tipo_identificacion": "CC",
+  "numero_identificacion": "1234567890",
+  "fecha_ingreso": "2025-10-17",
+  "ultima_atencion": null,
+  "observaciones": "",
+  "creado_en": "2025-10-17T10:30:00.123456Z",
+  "actualizado_en": "2025-10-17T10:30:00.123456Z"
+}
+```
+
+**7. Frontend actualiza interfaz**
+
+```javascript
+// Agregar nuevo paciente a la lista existente
+setPatients(prev => [newPatient, ...prev]);
+
+// Cerrar formulario
+setShowForm(false);
+
+// Mostrar mensaje de éxito (opcional)
+alert('Paciente creado exitosamente');
+```
+
+---
+
+## Ejemplos de Uso
+
+### Ejemplo 1: Buscar Medicamentos
+
+**Frontend:**
+
+```javascript
+const handleSearch = (e) => {
+  const value = e.target.value;
+  setSearchTerm(value);
+  cargarMedicamentos(value);
+};
+
+const cargarMedicamentos = async (buscar = "") => {
+  const params = buscar ? { buscar } : {};
+  const response = await api.get('/api/medicamentos/', { params });
+  setMedicamentos(response);
+};
+```
+
+**Petición HTTP:**
+
+```
+GET http://localhost:8000/api/medicamentos/?buscar=paracetamol
+```
+
+**Backend ejecuta:**
+
+```python
+def get_queryset(self):
+    queryset = super().get_queryset()
+    buscar = self.request.query_params.get('buscar', None)
+    
+    if buscar:
+        queryset = queryset.filter(
+            Q(nombre_producto__icontains=buscar) |
+            Q(id_medicamento__icontains=buscar) |
+            Q(laboratorio__icontains=buscar)
+        )
+    return queryset
+```
+
+**SQL generado:**
+
+```sql
+SELECT * FROM medicamentos
+WHERE nombre_producto LIKE '%paracetamol%'
+   OR id_medicamento LIKE '%paracetamol%'
+   OR laboratorio LIKE '%paracetamol%'
+ORDER BY nombre_producto;
+```
+
+### Ejemplo 2: Cargar Medicamentos desde Excel
+
+**1. Usuario selecciona archivo Excel:**
+
+```
+plantilla_medicamentos.xlsx
+- MED001 | Paracetamol 500mg | ...
+- MED002 | Ibuprofeno 400mg | ...
+- MED003 | Amoxicilina 500mg | ...
+```
+
+**2. Frontend envía archivo:**
+
+```javascript
+const handleUpload = async (file) => {
+  const formData = new FormData();
+  formData.append('archivo', file);
+  
+  const response = await api.post('/api/medicamentos/cargar_excel/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  
+  console.log(response.mensaje);
+  // "Se crearon 3 medicamentos"
+};
+```
+
+**3. Backend procesa con Pandas:**
+
+```python
+@action(detail=False, methods=['post'])
+def cargar_excel(self, request):
+    archivo = request.FILES.get('archivo')
+    
+    # Leer Excel
+    df = pd.read_excel(archivo)
+    
+    # Procesar cada fila
+    for index, fila in df.iterrows():
+        datos = {
+            'nombre_producto': str(fila['Nombre del producto']),
+            'stock_actual': int(fila['Stock actual']),
+            # ... más campos
+        }
+        
+        # Crear o actualizar
+        Medicamento.objects.update_or_create(
+            id_medicamento=fila['ID'],
+            defaults=datos
+        )
+    
+    return Response({'mensaje': 'Carga exitosa'})
+```
+
+**4. Resultado:**
+
+```json
+{
+  "mensaje": "Se crearon 3 medicamentos",
+  "detalle": {
+    "creados": 3,
+    "actualizados": 0,
+    "total_procesados": 3
+  },
+  "errores": [],
+  "total_filas": 3
+}
+```
+
+### Ejemplo 3: Cambiar Estado de Orden
+
+**1. Usuario hace clic en botón "Marcar Entregado"**
+
+**2. Frontend llama al endpoint:**
+
+```javascript
+const cambiarEstado = async (ordenId) => {
+  const response = await api.patch(
+    `/api/ordenes/${ordenId}/cambiar_estado/`,
+    { estado: 'entregado' }
+  );
+  
+  console.log(response.mensaje);
+  // "Estado cambiado a Entregado"
+};
+```
+
+**3. Backend actualiza:**
+
+```python
+@action(detail=True, methods=['patch'])
+def cambiar_estado(self, request, pk=None):
+    orden = self.get_object()
+    nuevo_estado = request.data.get('estado')
+    
+    # Validar estado
+    estados_validos = ['pendiente', 'entregado']
+    if nuevo_estado not in estados_validos:
+        return Response({'error': 'Estado no válido'}, status=400)
+    
+    # Actualizar
+    orden.estado = nuevo_estado
+    orden.save()
+    
+    serializer = self.get_serializer(orden)
+    return Response({
+        'mensaje': f'Estado cambiado a {orden.get_estado_display()}',
+        'orden': serializer.data
+    })
+```
+
+**4. SQL ejecutado:**
+
+```sql
+UPDATE ordenes
+SET estado = 'entregado',
+    actualizado_en = NOW()
+WHERE id = 1;
+```
+
+---
+
+## Testing y Depuración
+
+### Testing con Postman
+
+**Colección de pruebas recomendada:**
+
+**1. Autenticación**
+
+```
+POST http://localhost:8000/api/auth/login/
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+Respuesta esperada: 200 OK
+{
+  "success": true,
+  "user": { ... }
+}
+```
+
+**2. Listar Pacientes**
+
+```
+GET http://localhost:8000/api/pacientes/
+
+Respuesta esperada: 200 OK
+[
+  {
+    "id": 1,
+    "nombre_completo": "Juan Pérez",
+    ...
+  }
+]
+```
+
+**3. Crear Paciente**
+
+```
+POST http://localhost:8000/api/pacientes/
+Content-Type: application/json
+
+{
+  "nombre_completo": "María González",
+  "tipo_identificacion": "CC",
+  "numero_identificacion": "9876543210",
+  "fecha_ingreso": "2025-10-17"
+}
+
+Respuesta esperada: 201 Created
+```
+
+**4. Buscar Medicamentos**
+
+```
+GET http://localhost:8000/api/medicamentos/?buscar=paracetamol
+
+Respuesta esperada: 200 OK
+[filtrado de medicamentos]
+```
+
+**5. Cambiar Estado de Orden**
+
+```
+PATCH http://localhost:8000/api/ordenes/1/cambiar_estado/
+Content-Type: application/json
+
+{
+  "estado": "entregado"
+}
+
+Respuesta esperada: 200 OK
+{
+  "mensaje": "Estado cambiado a Entregado",
+  "orden": { ... }
+}
+```
+
+### Depuración en Backend
+
+**Habilitar logs detallados:**
+
+```python
+# backend/settings.py
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
+```
+
+**Ver queries SQL ejecutadas:**
+
+```python
+# En cualquier vista o método
+from django.db import connection
+
+def mi_vista(request):
+    # ... código que hace consultas
+    
+    # Ver todas las queries
+    for query in connection.queries:
+        print(query['sql'])
+        print(query['time'])
+```
+
+**Usar Django Shell:**
+
+```bash
+python manage.py shell
+```
+
+```python
+# Probar modelos y queries
+from pacientes.models import Paciente
+from medicamentos.models import Medicamento
+
+# Crear paciente
+paciente = Paciente.objects.create(
+    nombre_completo="Test",
+    tipo_identificacion="CC",
+    numero_identificacion="123456"
+)
+
+# Ver todos los pacientes
+Paciente.objects.all()
+
+# Filtrar medicamentos
+Medicamento.objects.filter(categoria='analgesico')
+
+# Ver SQL de una query
+print(Medicamento.objects.filter(categoria='analgesico').query)
+```
+
+### Depuración en Frontend
+
+**Consola del navegador:**
+
+```javascript
+// Ver datos de usuario
+console.log(localStorage.getItem('user'));
+
+// Ver respuesta de API
+api.get('/api/pacientes/')
+  .then(response => console.log(response))
+  .catch(error => console.error(error));
+
+// Ver estado de React
+console.log('Pacientes:', patients);
+console.log('Loading:', loading);
+```
+
+**React DevTools:**
+
+```
+1. Instalar extensión React Developer Tools en Chrome/Firefox
+2. Abrir DevTools (F12)
+3. Ir a pestaña "Components"
+4. Seleccionar componente
+5. Ver props, state, hooks en tiempo real
+```
+
+**Network Tab:**
+
+```
+1. Abrir DevTools (F12)
+2. Ir a pestaña "Network"
+3. Filtrar por "XHR" o "Fetch"
+4. Ver todas las peticiones HTTP
+5. Inspeccionar headers, payload, response
+```
+
+---
+
+## Troubleshooting
+
+### Problemas Comunes y Soluciones
+
+#### 1. Error: "No module named 'MySQLdb'"
+
+**Causa:** No está instalado el conector de MySQL
+
+**Solución:**
+
+```bash
+pip install mysqlclient
+
+# Si falla en Windows, descargar wheel desde:
+# https://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient
+pip install mysqlclient‑2.x.x‑cpXX‑cpXX‑win_amd64.whl
+```
+
+#### 2. Error: "Access denied for user 'root'@'localhost'"
+
+**Causa:** Credenciales incorrectas en settings.py
+
+**Solución:**
+
+```python
+# backend/settings.py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'farmacia_db',
+        'USER': 'root',           # Verificar usuario
+        'PASSWORD': 'tu_password', # Agregar contraseña correcta
+        'HOST': 'localhost',
+        'PORT': '3306',
+    }
+}
+```
+
+#### 3. Error: "Table doesn't exist"
+
+**Causa:** No se han aplicado las migraciones
+
+**Solución:**
+
+```bash
+cd backend
+python manage.py migrate
+
+# Ver estado de migraciones
+python manage.py showmigrations
+
+# Si hay problemas, resetear migraciones
+python manage.py migrate --run-syncdb
+```
+
+#### 4. Error CORS en Frontend
+
+**Causa:** Backend no permite peticiones desde localhost:3000
+
+**Solución:**
+
+```python
+# backend/settings.py
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# Verificar que 'corsheaders' esté en INSTALLED_APPS
+INSTALLED_APPS = [
+    ...
+    'corsheaders',
+    ...
+]
+
+# Verificar que el middleware esté primero
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Debe estar primero
+    'django.middleware.common.CommonMiddleware',
+    ...
+]
+```
+
+#### 5. Error: "Port 8000 is already in use"
+
+**Causa:** El puerto ya está siendo usado
+
+**Solución:**
+
+```bash
+# Usar otro puerto
+python manage.py runserver 8001
+
+# O matar el proceso (Windows)
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F
+
+# O matar el proceso (Linux/Mac)
+lsof -ti:8000 | xargs kill -9
+```
+
+#### 6. Error: "Port 3000 is already in use"
+
+**Causa:** React ya está corriendo en otro terminal
+
+**Solución:**
+
+```bash
+# Usar otro puerto
+PORT=3001 npm start
+
+# O matar el proceso (Windows)
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# O matar el proceso (Linux/Mac)
+lsof -ti:3000 | xargs kill -9
+```
+
+#### 7. Error: npm install falla
+
+**Causa:** Caché corrupta o versiones incompatibles
+
+**Solución:**
+
+```bash
+# Limpiar caché
+npm cache clean --force
+
+# Eliminar node_modules y package-lock.json
+rm -rf node_modules package-lock.json
+
+# Reinstalar
+npm install
+
+# Si persiste, usar npm ci
+npm ci
+```
+
+#### 8. Error: "Django admin CSS not loading"
+
+**Causa:** No se han recopilado archivos estáticos
+
+**Solución:**
+
+```bash
+cd backend
+python manage.py collectstatic --noinput
+```
+
+#### 9. Error: Fechas con formato incorrecto
+
+**Causa:** Diferencias en formato de fecha entre frontend y backend
+
+**Solución:**
+
+```javascript
+// Frontend: asegurar formato ISO
+const fecha = new Date('2025-10-17').toISOString().split('T')[0];
+// Resultado: "2025-10-17"
+```
+
+```python
+# Backend: usar DateField
+from django.db import models
+
+class Paciente(models.Model):
+    fecha_ingreso = models.DateField()  # Acepta YYYY-MM-DD
+```
+
+#### 10. Error: "Duplicate entry" al crear paciente
+
+**Causa:** Ya existe un paciente con ese tipo y número de identificación
+
+**Solución:**
+
+El modelo tiene `unique_together`:
+
+```python
+class Meta:
+    unique_together = ['tipo_identificacion', 'numero_identificacion']
+```
+
+Validar en frontend antes de enviar:
+
+```javascript
+const validarPaciente = async (tipo, numero) => {
+  const pacientes = await api.get('/api/pacientes/');
+  const existe = pacientes.some(p => 
+    p.tipo_identificacion === tipo && 
+    p.numero_identificacion === numero
+  );
+  
+  if (existe) {
+    alert('Ya existe un paciente con esta identificación');
+    return false;
+  }
+  return true;
+};
+```
+
+---
+
+## Mejoras Futuras
+
+### Backend
+
+**1. Implementar JWT Authentication**
+
+```bash
+pip install djangorestframework-simplejwt
+```
+
+```python
+# settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+# urls.py
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+urlpatterns = [
+    path('api/token/', TokenObtainPairView.as_view()),
+    path('api/token/refresh/', TokenRefreshView.as_view()),
+]
+```
+
+**2. Agregar Paginación**
+
+```python
+# settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20
+}
+```
+
+**3. Implementar Sistema de Roles**
+
+```python
+from django.contrib.auth.models import User, Group
+
+# Crear grupos
+admin_group = Group.objects.create(name='Administradores')
+farmaceutico_group = Group.objects.create(name='Farmacéuticos')
+
+# Asignar permisos
+from django.contrib.auth.models import Permission
+
+view_paciente = Permission.objects.get(codename='view_paciente')
+farmaceutico_group.permissions.add(view_paciente)
+```
+
+**4. Agregar Auditoría**
+
+```python
+# Crear modelo de auditoría
+class AuditLog(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    accion = models.CharField(max_length=50)  # CREATE, UPDATE, DELETE
+    modelo = models.CharField(max_length=50)
+    objeto_id = models.IntegerField()
+    cambios = models.JSONField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+```
+
+**5. Relación Orden-Medicamento**
+
+```python
+class DetalleOrden(models.Model):
+    orden = models.ForeignKey(Orden, on_delete=models.CASCADE)
+    medicamento = models.ForeignKey(Medicamento, on_delete=models.PROTECT)
+    cantidad = models.IntegerField()
+    precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def save(self, *args, **kwargs):
+        # Reducir stock automáticamente
+        if self.pk is None:  # Es nuevo
+            self.medicamento.stock_actual -= self.cantidad
+            self.medicamento.save()
+        super().save(*args, **kwargs)
+```
+
+### Frontend
+
+**1. Implementar Protección de Rutas**
+
+```javascript
+// components/ProtectedRoute.jsx
+import { Navigate } from 'react-router-dom';
+
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated');
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
+
+// App.js
+<Route 
+  path="/dashboard" 
+  element={
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  } 
+/>
+```
+
+**2. Agregar Notificaciones Toast**
+
+```bash
+npm install react-hot-toast
+```
+
+```javascript
+import toast, { Toaster } from 'react-hot-toast';
+
+// En el componente
+const handleSubmit = async () => {
+  try {
+    await api.post('/api/pacientes/', data);
+    toast.success('Paciente creado exitosamente');
+  } catch (error) {
+    toast.error('Error al crear paciente');
+  }
+};
+
+// En App.js
+<Toaster position="top-right" />
+```
+
+**3. Implementar Modo Oscuro**
+
+```javascript
+// hooks/useDarkMode.js
+import { useState, useEffect } from 'react';
+
+export const useDarkMode = () => {
+  const [darkMode, setDarkMode] = useState(false);
+  
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(isDark);
+    
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+  
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    localStorage.setItem('darkMode', !darkMode);
+    document.documentElement.classList.toggle('dark');
+  };
+  
+  return [darkMode, toggleDarkMode];
+};
+```
+
+**4. Agregar Validación de Formularios**
+
+```bash
+npm install react-hook-form yup
+```
+
+```javascript
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+
+const schema = yup.object({
+  nombre_completo: yup.string().required('Nombre es requerido'),
+  numero_identificacion: yup.string()
+    .matches(/^[0-9]+$/, 'Solo números')
+    .required('Identificación es requerida'),
+});
+
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: yupResolver(schema)
+});
+```
+
+**5. Implementar Paginación en Tablas**
+
+```javascript
+const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 10;
+
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
+
+const totalPages = Math.ceil(items.length / itemsPerPage);
+```
+
+---
+
+## Comandos Útiles
+
+### Backend (Django)
+
+```bash
+# Gestión del proyecto
+python manage.py runserver              # Iniciar servidor
+python manage.py runserver 8001         # Iniciar en puerto diferente
+python manage.py check                  # Verificar problemas
+
+# Base de datos
+python manage.py makemigrations         # Crear migraciones
+python manage.py migrate                # Aplicar migraciones
+python manage.py showmigrations         # Ver estado de migraciones
+python manage.py sqlmigrate app 0001    # Ver SQL de migración
+
+# Usuarios
+python manage.py createsuperuser        # Crear admin
+python manage.py changepassword user    # Cambiar contraseña
+
+# Shell y testing
+python manage.py shell                  # Shell interactivo
+python manage.py test                   # Ejecutar tests
+python manage.py dbshell                # Acceder a MySQL directamente
+
+# Datos
+python manage.py dumpdata > backup.json # Exportar datos
+python manage.py loaddata backup.json   # Importar datos
+python manage.py flush                  # Limpiar base de datos
+
+# Archivos estáticos
+python manage.py collectstatic          # Recopilar archivos estáticos
+python manage.py findstatic file.css    # Buscar archivo estático
+```
+
+### Frontend (React)
+
+```bash
+# Gestión del proyecto
+npm start                    # Iniciar en desarrollo
+npm run build                # Compilar para producción
+npm test                     # Ejecutar tests
+npm run eject                # Eyectar configuración (irreversible)
+
+# Dependencias
+npm install                  # Instalar dependencias
+npm install package-name     # Instalar paquete específico
+npm uninstall package-name   # Desinstalar paquete
+npm update                   # Actualizar paquetes
+npm outdated                 # Ver paquetes desactualizados
+
+# Limpieza
+npm cache clean --force      # Limpiar caché
+rm -rf node_modules          # Eliminar node_modules
+npm ci                       # Instalación limpia
+
+# Análisis
+npm run build -- --stats     # Analizar tamaño del build
+npm audit                    # Ver vulnerabilidades
+npm audit fix                # Corregir vulnerabilidades
+```
+
+### Base de Datos (MySQL)
+
+```bash
+# Acceder a MySQL
+mysql -u root -p
+
+# Comandos dentro de MySQL
+SHOW DATABASES;              # Ver bases de datos
+USE farmacia_db;             # Seleccionar base de datos
+SHOW TABLES;                 # Ver tablas
+DESCRIBE pacientes;          # Ver estructura de tabla
+SELECT * FROM pacientes;     # Ver datos
+
+# Backup
+mysqldump -u root -p farmacia_db > backup.sql
+
+# Restaurar
+mysql -u root -p farmacia_db < backup.sql
+
+# Salir
+EXIT;
+```
+
+### Git (Control de Versiones)
+
+```bash
+# Configuración inicial
+git init                     # Inicializar repositorio
+git remote add origin URL    # Conectar con GitHub
+
+# Trabajo diario
+git status                   # Ver estado
+git add .                    # Agregar cambios
+git commit -m "mensaje"      # Crear commit
+git push origin main         # Subir cambios
+
+# Branching
+git branch feature-name      # Crear rama
+git checkout feature-name    # Cambiar de rama
+git merge feature-name       # Fusionar rama
+
+# Historial
+git log                      # Ver historial
+git diff                     # Ver cambios
+```
+
+---
+
+## Licencia
+
+Este es un proyecto académico desarrollado con fines educativos.
+
+---
+
+## Contacto
+
+Para preguntas sobre este proyecto universitario, contactar al equipo de desarrollo.
+
+**Proyecto:** FarmaGestión  
+**Versión:** 1.0.0  
+**Año:** 2025
